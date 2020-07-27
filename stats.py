@@ -1,9 +1,29 @@
 from PyQt5 import QtWidgets, QtCore, QtGui;
 import sys, os, requests, time, multiprocessing;
+import setproctitle;
+setproctitle.setproctitle("FAHStats_py");
 
+def get_stats():
+    source = requests.get("https://api.foldingathome.org/user/yobleck"); #https://api.foldingathome.org/
+    html = "";
+    if(source.status_code == requests.codes.ok):
+        html = source.json();
+        name = html["name"];
+        score = html["score"];
+        wus = html["wus"];
+        rank = html["rank"];
+    user_count = requests.get("https://api.foldingathome.org/user-count").text;
+    
+    #timer code         + str(time.time())[0:11] + "\n" +\
+    return  name + "\n" \
+            "Score: " + f"{score:,}" + "\n" + \
+            "WUs: " + f"{wus:,}" + "\n" + \
+            "Rank: " + f"{rank:,}" + " / " + f"{int(user_count):,}" + "\n" + \
+            "Top: " + str((rank/int(user_count))*100)[0:4] + "%"
+            
 
 def do_thing():
-    app = QtWidgets.QApplication(["F@H Stats"]);
+    app = QtWidgets.QApplication(["FAHStats"]);
     win = QtWidgets.QMainWindow();
     
     win.setAttribute(QtCore.Qt.WA_ShowWithoutActivating); #stops new window from stealing focus
@@ -17,34 +37,18 @@ def do_thing():
     label.setAlignment(QtCore.Qt.AlignTop | QtCore.Qt.AlignLeft);
     label.setStyleSheet("background-color:black;");
     
-    source = requests.get("https://api.foldingathome.org/user/yobleck"); #https://api.foldingathome.org/
-    html = "";
-    if(source.status_code == requests.codes.ok):
-        html = source.json();
-        name = html["name"];
-        score = html["score"];
-        wus = html["wus"];
-        rank = html["rank"];
-    user_count = requests.get("https://api.foldingathome.org/user-count").text;
+    label.setText(get_stats()); #initially get stats to be displayed
+    def refresh(): #function to do above repeatedly
+        label.setText(get_stats());
     
-    label.setText(name + "\n" + #str(time.time())[0:11] +
-                  "Score: " + f"{score:,}" + "\n" +
-                  "WUs: " + f"{wus:,}" + "\n" +
-                  "Rank: " + f"{rank:,}" + " / " + f"{int(user_count):,}" + "\n" +
-                  "Top: " + str((rank/int(user_count))*100)[0:4] + "%"
-                  );
-    
+    timer = QtCore.QTimer(); #timer that refreshes label
+    timer.timeout.connect(refresh);
+    timer.start(300000); #milliseconds
     
     #actually show everything on screen
     win.show();
     label.show();
-    app.exec_();
-    print("test");
+    sys.exit(app.exec_());
 
-while(True): #this is lazy shit
-    thread = multiprocessing.Process(target=do_thing); #my brain is really foggy right now from sleep deprivation so I can't handle learing Qthread
-    thread.daemon = True;
-    thread.start();
-    time.sleep(600);
-    thread.kill();
-    thread.join();
+
+do_thing();
