@@ -16,24 +16,32 @@ else:
 tn.write(b"queue-info\n"); #run FAHClient command to get info
 
 i = 0;
+outs = [];
 while(True): #reading line by line bypasses all the fluff at the beginning and end of the buffer
     line = tn.read_until(b"\n");
     #print("line:", i, line);
     
     if(b"id" in line): #TODO: case where there are multiple work units
-        out = json.loads( line.strip(b"\n") ); #read info from telnet and convert to dict
-    if(b"basecredit" in line): #exit if 1 work unit running TODO: does this work with >1 WU
+        if(b",\n" in line):
+            line = line.strip(b",\n"); #strip newline and comma off non last work unit(s)
+        else:
+            line = line.strip(b"\n"); #strip newline off last work unit
+        
+        outs.append( json.loads(line) ); #read info from telnet and convert to dict
+    if(b"---" in line): #exit condition. is this always met?
         break;
-    if(b"---" in line): #exit if no WUs running
-        break;
+    
     i+=1;
 
 tn.close();
 
-if("out" in locals()):
-    if(verbose):
-        print(out);
-    else:
-        print("id:", out["id"], "\npercentdone:", out["percentdone"], "\neta:", out["eta"], "\ncreditestimate:", out["creditestimate"]);
+if(outs):
+    for out in outs:
+        if(verbose):
+            print(out);
+        else:
+            print("id:", out["id"], "\ncore:", out["core"],
+                  "\npercentdone:", out["percentdone"], "\neta:", out["eta"], "\ncreditestimate:", out["creditestimate"]);
+        print();
 else:
     print("no work units found");
