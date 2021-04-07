@@ -1,0 +1,10 @@
+[Unit]
+Description=F@H stats displayed as a desktop widget Timer
+
+
+[Timer]
+OnStartupSec=8sec
+#AccuracySec=1sec
+
+[Install]
+WantedBy=timers.target

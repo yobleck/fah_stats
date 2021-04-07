@@ -1,0 +1,16 @@
+[Unit]
+Description=F@H stats displayed as a desktop widget
+Wants=network.target graphical.target
+After=network.target graphical.target
+
+[Service]
+Type=idle
+Environment=DISPLAY=:0
+Environment=XAUTHORITY=/home/yobleck/.Xauthority
+Environment=XDG_RUNTIME_DIR=/run/user/1000
+#ExecStart=/usr/bin/python /home/yobleck/fah/fah_stats.py
+ExecStart=/usr/bin/bash /home/yobleck/fah/fah_stats.sh
+Restart=on-failure
+
+#[Install]
+#WantedBy=default.target
