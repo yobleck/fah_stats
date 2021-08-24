@@ -19,3 +19,5 @@ $ python running.py ip port v
     -v is verbose output (-v, -verbose and --verbose also work) must be last argument
 
 outputs id, percentage, eta and points by default. vebose dumps all info as json object
+
+TODO: depends on telnetlib whic is neing deprecated. Replace with sockets. See FAHControl code for reference.
