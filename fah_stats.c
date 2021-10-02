@@ -3,15 +3,15 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
-#include <locale.h>
+#include <locale.h> //for commas in large numbers
 
 #include <curl/curl.h>
 
 #include <json-c/json.h>
 
 #include <X11/Xlib.h>
-#include <X11/Xutil.h>
-#include <X11/Xos.h>
+#include <X11/Xutil.h> //for WM stuff
+#include <X11/Xos.h> //for sleep()
 
 //TODO cmd args, logging
 struct json_object *username;
@@ -59,12 +59,8 @@ GC gc, text_gc;
 XEvent ev;
 
 void init_x() {
-    // get the colors black and white (see section for details)
-    unsigned long black, white;
-
-    /* use the information from the environment variable DISPLAY 
-       to create the X connection:
-    */    
+    unsigned long black, white; //background and foreground colors
+   
     dis=XOpenDisplay(NULL);
     if (dis == NULL) {
         fprintf(stderr, "Cannot open display\n");
@@ -73,10 +69,6 @@ void init_x() {
     black=BlackPixel(dis, scr); //get color black
     white=WhitePixel(dis, scr); //get color white
 
-    /* once the display is initialized, create the window.
-       This window will be have be 200 pixels across and 300 down.
-       It will have the foreground white and background black
-    */
     win=XCreateSimpleWindow(dis, XRootWindow(dis,scr), 10, 10, 165, 60, 1, white, black);
     
     // set WM_NAME
@@ -173,32 +165,42 @@ int main(void) {
     get_info();
     init_x();
     time_t timer = time(NULL);
-
+    int q = XEventsQueued(dis, QueuedAfterFlush);
     while(1) {
-        XNextEvent(dis, &ev); //blocking. have to send event to continue
-        //only works after click
-        if (ev.type == Expose) {
-            draw_text();
-        }
-        if (ev.type == KeyPress) { //TODO use keysymdef.h?
-            printf("%d\n", ev.xkey.keycode);
-            if (ev.xkey.keycode == 9) {
-                break;
+        q = XEventsQueued(dis, QueuedAfterFlush); //non blocking event queue check
+        //printf("q: %d\n", q);
+        if (q > 0) {
+            //printf("doing something\n");
+            XNextEvent(dis, &ev); //blocking
+            
+            //only works after click?
+            if (ev.type == Expose) {
+                draw_text();
+            }
+            if (ev.type == KeyPress) { //TODO use keysymdef.h?
+                //printf("%d\n", ev.xkey.keycode);
+                if (ev.xkey.keycode == 9) { //esc key
+                    break;
+                }
             }
         }
-        if (ev.type == ButtonPress && time(NULL)-10 > timer) { //TODO replace 10 with 600?
-            printf("%d\n", timer);
+        //else {
+            //printf("nothing to do\n");
+        //}
+        sleep(2);
+        if (time(NULL)-600 > timer) {
+            printf("timer: %d\n", timer);
             timer = time(NULL);
             get_info();
             draw_text();
         }
     }
-    //sleep(2);
     close_x();
     return 0;
-} 
+}
 
 //https://curl.se/libcurl/c/
 //https://curl.se/libcurl/c/simple.html
 //https://stackoverflow.com/questions/42531831/adding-fonts-with-very-large-size-in-x11
 //http://ps-2.kev009.com/tl/techlib/manuals/adoclib/libs/gl32tref/xfontsc.htm
+//https://tronche.com/gui/x/xlib/event-handling/XEventsQueued.html
